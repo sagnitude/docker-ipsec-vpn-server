@@ -1,29 +1,16 @@
-﻿# IPsec VPN Server on Docker
+# IPsec VPN Server on Docker
 
-[![Build Status](https://static.ls20.com/travis-ci/docker-ipsec-vpn-server.svg)](https://travis-ci.org/hwdsl2/docker-ipsec-vpn-server) 
-[![Author](https://static.ls20.com/travis-ci/author.svg)](#author) 
-[![Docker Stars](https://img.shields.io/docker/stars/hwdsl2/ipsec-vpn-server.svg?maxAge=3600)](https://hub.docker.com/r/hwdsl2/ipsec-vpn-server) 
-[![Docker Pulls](https://img.shields.io/docker/pulls/hwdsl2/ipsec-vpn-server.svg?maxAge=3600)](https://hub.docker.com/r/hwdsl2/ipsec-vpn-server)
-
-Docker image to run an IPsec VPN server, with support for both `IPsec/L2TP` and `IPsec/XAuth ("Cisco IPsec")`.
+Docker image to run an IPsec VPN server, with both `IPsec/L2TP` and `IPsec/XAuth ("Cisco IPsec")`.
 
 Based on Debian Jessie with [Libreswan](https://libreswan.org) (IPsec VPN software) and [xl2tpd](https://github.com/xelerance/xl2tpd) (L2TP daemon).
 
-*Read this in other languages: [English](README.md), [简体中文](README-zh.md).*
-
-## Install Docker
-
-Follow [these instructions](https://docs.docker.com/engine/installation/) to get Docker running on your server.
+*Read this in other languages: [English](https://github.com/hwdsl2/docker-ipsec-vpn-server/blob/master/README.md), [Chinese](https://github.com/hwdsl2/docker-ipsec-vpn-server/blob/master/README-zh.md).*
 
 ## Download
-
-Get the trusted build from the [Docker Hub registry](https://hub.docker.com/r/hwdsl2/ipsec-vpn-server):
 
 ```
 docker pull hwdsl2/ipsec-vpn-server
 ```
-
-Alternatively, you may [build from source code](#build-from-source-code) on GitHub.
 
 ## How to use this image
 
@@ -101,7 +88,7 @@ Get your computer or device to use the VPN. Please refer to:
 [Configure IPsec/L2TP VPN Clients](https://github.com/hwdsl2/setup-ipsec-vpn/blob/master/docs/clients.md)   
 [Configure IPsec/XAuth ("Cisco IPsec") VPN Clients](https://github.com/hwdsl2/setup-ipsec-vpn/blob/master/docs/clients-xauth.md)
 
-Enjoy your very own VPN! :sparkles::tada::rocket::sparkles:
+Enjoy your very own VPN!
 
 ## Technical details
 
@@ -118,40 +105,7 @@ The ports that are exposed for this container to work are:
 
 * 4500/udp and 500/udp for IPsec
 
-## Build from source code
-
-Advanced users can download and compile the source yourself from GitHub:
-
-```
-git clone https://github.com/hwdsl2/docker-ipsec-vpn-server.git
-cd docker-ipsec-vpn-server
-docker build -t hwdsl2/ipsec-vpn-server .
-```
-
-or use this if not modifying the source code:
-
-```
-docker build -t hwdsl2/ipsec-vpn-server github.com/hwdsl2/docker-ipsec-vpn-server.git
-```
-
 ## See also
 
 * [IPsec VPN Server on Ubuntu, Debian and CentOS](https://github.com/hwdsl2/setup-ipsec-vpn)
 * [IKEv2 VPN Server on Docker](https://github.com/gaomd/docker-ikev2-vpn-server)
-
-## Author
-
-**Lin Song** (linsongui@gmail.com)   
-- Final year U.S. PhD candidate, majoring in Electrical and Computer Engineering (ECE)
-- Actively seeking opportunities in areas such as Software or Systems Engineering
-- Contact me on LinkedIn: [https://www.linkedin.com/in/linsongui](https://www.linkedin.com/in/linsongui)
-
-Thanks to <a href="https://github.com/hwdsl2/docker-ipsec-vpn-server/graphs/contributors" target="_blank">all contributors</a> to this project!
-
-## License
-
-Copyright (C) 2016&nbsp;Lin Song&nbsp;&nbsp;&nbsp;<a href="https://www.linkedin.com/in/linsongui" target="_blank"><img src="https://static.licdn.com/scds/common/u/img/webpromo/btn_viewmy_160x25.png" width="160" height="25" border="0" alt="View my profile on LinkedIn"></a>    
-Based on [the work of Thomas Sarlandie](https://github.com/sarfata/voodooprivacy) (Copyright 2012)
-
-This work is licensed under the [Creative Commons Attribution-ShareAlike 3.0 Unported License](http://creativecommons.org/licenses/by-sa/3.0/)   
-Attribution required: please include my name in any derivative and let me know how you have improved it!
