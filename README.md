@@ -1,19 +1,31 @@
-﻿# IPsec VPN Server on Docker
+# IPsec VPN Server on Docker
 
-[![Build Status](https://static.ls20.com/travis-ci/docker-ipsec-vpn-server.svg)](https://travis-ci.org/hwdsl2/docker-ipsec-vpn-server) 
-[![Author](https://static.ls20.com/travis-ci/author.svg)](#author) 
-[![Docker Stars](https://img.shields.io/docker/stars/hwdsl2/ipsec-vpn-server.svg?maxAge=3600)](https://hub.docker.com/r/hwdsl2/ipsec-vpn-server) 
-[![Docker Pulls](https://img.shields.io/docker/pulls/hwdsl2/ipsec-vpn-server.svg?maxAge=3600)](https://hub.docker.com/r/hwdsl2/ipsec-vpn-server)
+[![Build Status](https://travis-ci.org/hwdsl2/docker-ipsec-vpn-server.svg?branch=master)](https://travis-ci.org/hwdsl2/docker-ipsec-vpn-server) [![GitHub Stars](https://img.shields.io/github/stars/hwdsl2/docker-ipsec-vpn-server.svg?maxAge=86400)](https://github.com/hwdsl2/docker-ipsec-vpn-server/stargazers) [![Docker Stars](https://img.shields.io/docker/stars/hwdsl2/ipsec-vpn-server.svg?maxAge=86400)](https://hub.docker.com/r/hwdsl2/ipsec-vpn-server) [![Docker Pulls](https://img.shields.io/docker/pulls/hwdsl2/ipsec-vpn-server.svg?maxAge=86400)](https://hub.docker.com/r/hwdsl2/ipsec-vpn-server)
 
-Docker image to run an IPsec VPN server, with support for both `IPsec/L2TP` and `IPsec/XAuth ("Cisco IPsec")`.
+Docker image to run an IPsec VPN server, with both `IPsec/L2TP` and `Cisco IPsec`.
 
 Based on Debian Jessie with [Libreswan](https://libreswan.org) (IPsec VPN software) and [xl2tpd](https://github.com/xelerance/xl2tpd) (L2TP daemon).
 
-*Read this in other languages: [English](README.md), [简体中文](README-zh.md).*
+[**&raquo; See also: IPsec VPN Server on Ubuntu, Debian and CentOS**](https://github.com/hwdsl2/setup-ipsec-vpn)
+
+*Read this in other languages: [English](https://github.com/hwdsl2/docker-ipsec-vpn-server/blob/master/README.md), [Chinese](https://github.com/hwdsl2/docker-ipsec-vpn-server/blob/master/README-zh.md).*
+
+#### Table of Contents
+
+- [Install Docker](#install-docker)
+- [Download](#download)
+- [How to use this image](#how-to-use-this-image)
+- [Next steps](#next-steps)
+- [Important notes](#important-notes)
+- [Update Docker image](#update-docker-image)
+- [Advanced usage](#advanced-usage)
+- [Technical details](#technical-details)
+- [See also](#see-also)
+- [License](#license)
 
 ## Install Docker
 
-Follow [these instructions](https://docs.docker.com/engine/installation/) to get Docker running on your server.
+First, [install and run Docker](https://docs.docker.com/engine/installation/linux/) on your Linux server.
 
 ## Download
 
@@ -23,13 +35,13 @@ Get the trusted build from the [Docker Hub registry](https://hub.docker.com/r/hw
 docker pull hwdsl2/ipsec-vpn-server
 ```
 
-Alternatively, you may [build from source code](#build-from-source-code) on GitHub.
+Alternatively, you may [build from source code](https://github.com/hwdsl2/docker-ipsec-vpn-server#build-from-source-code) on GitHub.
 
 ## How to use this image
 
 ### Environment variables
 
-This Docker image uses the following three environment variables, that can be declared in an `env` file:
+This Docker image uses the following three variables, that can be declared in an `env` file:
 
 ```
 VPN_IPSEC_PSK=<IPsec pre-shared key>
@@ -39,37 +51,35 @@ VPN_PASSWORD=<VPN Password>
 
 This will create a single user account for VPN login. The IPsec PSK (pre-shared key) is specified by the `VPN_IPSEC_PSK` environment variable. The VPN username is defined in `VPN_USER`, and VPN password is specified by `VPN_PASSWORD`.
 
-**Note 1:** In your `env` file, DO NOT put single or double quotes around values, or add space around `=`. Also, DO NOT use these characters within values: `\ " '`
-
-**Note 2:** The same VPN account can be used by your multiple devices. However, due to a limitation of the IPsec protocol, if these devices are behind the same NAT (e.g. home router), they cannot simultaneously connect to the VPN server.
+**Note:** In your `env` file, DO NOT put single or double quotes around values, or add space around `=`. Also, DO NOT use these characters within values: `\ " '`.
 
 All the variables to this image are optional, which means you don't have to type in any environment variable, and you can have an IPsec VPN server out of the box! Read the sections below for details.
 
 ### Start the IPsec VPN server
 
-(Important) First, run this command on the Docker host to load the IPsec `NETKEY` kernel module:
+**Important:** First, load the IPsec `NETKEY` kernel module on the Docker host:
 
 ```
 sudo modprobe af_key
 ```
 
-Start a new Docker container with the following command (replace `./vpn.env` with your own `env` file) :
+Create a new Docker container from this image (replace `./vpn.env` with your own `env` file):
 
 ```
 docker run \
     --name ipsec-vpn-server \
     --env-file ./vpn.env \
+    --restart=always \
     -p 500:500/udp \
     -p 4500:4500/udp \
     -v /lib/modules:/lib/modules:ro \
     -d --privileged \
-    --restart=always \
     hwdsl2/ipsec-vpn-server
 ```
 
 ### Retrieve VPN login details
 
-If you did not set environment variables via an `env` file, `VPN_USER` will default to `vpnuser` and both `VPN_IPSEC_PSK` and `VPN_PASSWORD` will be randomly generated. To retrieve them, show the logs of the running container:
+If you did not specify an `env` file in the `docker run` command above, `VPN_USER` will default to `vpnuser` and both `VPN_IPSEC_PSK` and `VPN_PASSWORD` will be randomly generated. To retrieve them, view the container logs:
 
 ```
 docker logs ipsec-vpn-server
@@ -86,12 +96,24 @@ Username: <VPN Username>
 Password: <VPN Password>
 ```
 
+(Optional) Backup the generated VPN login details (if any) to the current directory:
+
+```
+docker cp ipsec-vpn-server:/opt/src/vpn-gen.env ./
+```
+
 ### Check server status
 
 To check the status of your IPsec VPN server, you can pass `ipsec status` to your container like this:
 
 ```
 docker exec -it ipsec-vpn-server ipsec status
+```
+
+Or display current established VPN connections:
+
+```
+docker exec -it ipsec-vpn-server ipsec whack --trafficstatus
 ```
 
 ## Next steps
@@ -101,13 +123,84 @@ Get your computer or device to use the VPN. Please refer to:
 [Configure IPsec/L2TP VPN Clients](https://github.com/hwdsl2/setup-ipsec-vpn/blob/master/docs/clients.md)   
 [Configure IPsec/XAuth ("Cisco IPsec") VPN Clients](https://github.com/hwdsl2/setup-ipsec-vpn/blob/master/docs/clients-xauth.md)
 
-Enjoy your very own VPN! :sparkles::tada::rocket::sparkles:
+If you get an error when trying to connect, see [Troubleshooting](https://github.com/hwdsl2/setup-ipsec-vpn/blob/master/docs/clients.md#troubleshooting).
+
+Enjoy your very own VPN!
+
+## Important notes
+
+*Read this in other languages: [English](https://github.com/hwdsl2/docker-ipsec-vpn-server/blob/master/README.md#important-notes), [Chinese](https://github.com/hwdsl2/docker-ipsec-vpn-server/blob/master/README-zh.md).*
+
+For **Windows users**, this [one-time registry change](https://github.com/hwdsl2/setup-ipsec-vpn/blob/master/docs/clients.md#windows-error-809) is required if the VPN server and/or client is behind NAT (e.g. home router).
+
+The same VPN account can be used by your multiple devices. However, due to an IPsec/L2TP limitation, if you wish to connect multiple devices simultaneously from behind the same NAT (e.g. home router), you must use only [IPsec/XAuth mode](https://github.com/hwdsl2/setup-ipsec-vpn/blob/master/docs/clients-xauth.md). Also, your server must run the [latest version](https://github.com/hwdsl2/docker-ipsec-vpn-server#update-docker-image) of this Docker image.
+
+For servers with an external firewall (e.g. [EC2](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/using-network-security.html)/[GCE](https://cloud.google.com/compute/docs/networking#firewalls)), open UDP ports 500 and 4500 for the VPN.
+
+Before editing any VPN config files, you must first [start a Bash session](https://github.com/hwdsl2/docker-ipsec-vpn-server#bash-shell-inside-container) in the running container.
+
+If you wish to add, edit or remove VPN user accounts, see [Manage VPN Users](https://github.com/hwdsl2/setup-ipsec-vpn/blob/master/docs/manage-users.md). Please note: After editing the VPN config files, you must also comment out the relevant sections in `/opt/src/run.sh`, to avoid losing your changes on container restart.
+
+Clients are set to use [Google Public DNS](https://developers.google.com/speed/public-dns/) when the VPN connection is active. If another DNS provider is preferred, replace `8.8.8.8` and `8.8.4.4` in `/opt/src/run.sh` with the new servers. Then restart the Docker container.
+
+## Update Docker image
+
+To update your Docker image and container, follow these steps:
+
+```
+docker pull hwdsl2/ipsec-vpn-server
+```
+
+If the Docker image is already up to date, you should see:
+
+```
+Status: Image is up to date for hwdsl2/ipsec-vpn-server:latest
+```
+
+Otherwise, it will download the latest version. To update your Docker container, first write down all your VPN login details (refer to "Retrieve VPN login details" above). Then remove the Docker container with `docker rm -f ipsec-vpn-server`. Finally, re-create it using instructions from the "How to use this image" section.
+
+## Advanced usage
+
+### Build from source code
+
+Advanced users can download and compile the source code from GitHub:
+
+```
+git clone https://github.com/hwdsl2/docker-ipsec-vpn-server.git
+cd docker-ipsec-vpn-server
+docker build -t hwdsl2/ipsec-vpn-server .
+```
+
+Or use this if not modifying the source code:
+
+```
+docker build -t hwdsl2/ipsec-vpn-server github.com/hwdsl2/docker-ipsec-vpn-server.git
+```
+
+### Bash shell inside container
+
+To start a Bash session in the running container:
+
+```
+docker exec -it ipsec-vpn-server env TERM=xterm bash -l
+```
+
+(Optional) Install the `nano` editor:
+
+```
+apt-get update && apt-get -y install nano
+```
+
+When finished, exit the container and restart if needed:
+
+```
+exit
+docker restart ipsec-vpn-server
+```
 
 ## Technical details
 
 There are two services running: `Libreswan (pluto)` for the IPsec VPN, and `xl2tpd` for L2TP support.
-
-Clients are configured to use [Google Public DNS](https://developers.google.com/speed/public-dns/) when the VPN connection is active.
 
 The default IPsec configuration supports:
 
@@ -118,39 +211,14 @@ The ports that are exposed for this container to work are:
 
 * 4500/udp and 500/udp for IPsec
 
-## Build from source code
-
-Advanced users can download and compile the source yourself from GitHub:
-
-```
-git clone https://github.com/hwdsl2/docker-ipsec-vpn-server.git
-cd docker-ipsec-vpn-server
-docker build -t hwdsl2/ipsec-vpn-server .
-```
-
-or use this if not modifying the source code:
-
-```
-docker build -t hwdsl2/ipsec-vpn-server github.com/hwdsl2/docker-ipsec-vpn-server.git
-```
-
 ## See also
 
 * [IPsec VPN Server on Ubuntu, Debian and CentOS](https://github.com/hwdsl2/setup-ipsec-vpn)
 * [IKEv2 VPN Server on Docker](https://github.com/gaomd/docker-ikev2-vpn-server)
 
-## Author
-
-**Lin Song** (linsongui@gmail.com)   
-- Final year U.S. PhD candidate, majoring in Electrical and Computer Engineering (ECE)
-- Actively seeking opportunities in areas such as Software or Systems Engineering
-- Contact me on LinkedIn: [https://www.linkedin.com/in/linsongui](https://www.linkedin.com/in/linsongui)
-
-Thanks to <a href="https://github.com/hwdsl2/docker-ipsec-vpn-server/graphs/contributors" target="_blank">all contributors</a> to this project!
-
 ## License
 
-Copyright (C) 2016&nbsp;Lin Song&nbsp;&nbsp;&nbsp;<a href="https://www.linkedin.com/in/linsongui" target="_blank"><img src="https://static.licdn.com/scds/common/u/img/webpromo/btn_viewmy_160x25.png" width="160" height="25" border="0" alt="View my profile on LinkedIn"></a>    
+Copyright (C) 2016-2017 [Lin Song](https://www.linkedin.com/in/linsongui) [![View my profile on LinkedIn](https://static.licdn.com/scds/common/u/img/webpromo/btn_viewmy_160x25.png)](https://www.linkedin.com/in/linsongui)   
 Based on [the work of Thomas Sarlandie](https://github.com/sarfata/voodooprivacy) (Copyright 2012)
 
 This work is licensed under the [Creative Commons Attribution-ShareAlike 3.0 Unported License](http://creativecommons.org/licenses/by-sa/3.0/)   

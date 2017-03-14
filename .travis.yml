@@ -3,28 +3,64 @@ language: generic
 sudo: required
 dist: trusty
 
+addons:
+  apt:
+    sources:
+    - debian-sid
+    packages:
+    - shellcheck
+
 services:
   - docker
 
-install:
-  - docker build -t vpnserver .
-  - docker run --name vpnserver1 --env-file ./vpn.env.example -p 500:500/udp -p 4500:4500/udp -v /lib/modules:/lib/modules:ro -d --privileged --restart=always vpnserver
-  - docker run --name vpnserver2 -p 501:500/udp -p 4501:4500/udp -v /lib/modules:/lib/modules:ro -d --privileged --restart=always vpnserver
+env:
+  - TESTID=no-env
+  - TESTID=with-env
 
 script:
-  - sleep 20
-  - docker ps | grep -q vpnserver1
-  - docker ps | grep -q vpnserver2
-  - docker logs vpnserver1
-  - docker logs vpnserver2
-  - docker exec -it vpnserver1 ipsec status
-  - docker exec -it vpnserver2 ipsec status
-  - docker restart vpnserver1
-  - docker restart vpnserver2
-  - sleep 20
-  - docker ps | grep -q vpnserver1
-  - docker ps | grep -q vpnserver2
-  - docker logs vpnserver1
-  - docker logs vpnserver2
-  - docker exec -it vpnserver1 ipsec status
-  - docker exec -it vpnserver2 ipsec status
+  - export SHELLCHECK_OPTS="-e SC1090,SC1091"
+  - shellcheck *.sh
+  - sudo sed -i "/debian unstable/d" /etc/apt/sources.list
+  - docker build -t vpn .
+  - 'if [ "$TESTID" = "with-env" ]; then
+      docker run
+      --name "$TESTID"
+      --env-file ./vpn.env.example
+      --restart=always
+      -p 500:500/udp
+      -p 4500:4500/udp
+      -v /lib/modules:/lib/modules:ro
+      -d --privileged vpn;
+    elif [ "$TESTID" = "no-env" ]; then
+      docker run
+      --name "$TESTID"
+      --restart=always
+      -p 500:500/udp
+      -p 4500:4500/udp
+      -v /lib/modules:/lib/modules:ro
+      -d --privileged vpn;
+    fi'
+  - sleep 15
+  - docker ps | grep "$TESTID"
+  - docker logs "$TESTID"
+  - docker exec -it "$TESTID" netstat -anpu | grep pluto
+  - docker exec -it "$TESTID" netstat -anpu | grep xl2tpd
+  - if [ "$TESTID" = "with-env" ]; then source ./vpn.env.example; fi
+  - if [ "$TESTID" = "with-env" ]; then docker exec -it "$TESTID" grep "$VPN_IPSEC_PSK" /etc/ipsec.secrets; fi
+  - if [ "$TESTID" = "with-env" ]; then docker exec -it "$TESTID" grep "$VPN_USER" /etc/ppp/chap-secrets; fi
+  - if [ "$TESTID" = "with-env" ]; then docker exec -it "$TESTID" grep "$VPN_PASSWORD" /etc/ppp/chap-secrets; fi
+  - if [ "$TESTID" = "with-env" ]; then docker exec -it "$TESTID" grep "$VPN_USER" /etc/ipsec.d/passwd; fi
+  - docker restart "$TESTID"
+  - sleep 15
+  - docker ps | grep "$TESTID"
+  - docker logs "$TESTID"
+  - docker exec -it "$TESTID" netstat -anpu | grep pluto
+  - docker exec -it "$TESTID" netstat -anpu | grep xl2tpd
+  - if [ "$TESTID" = "with-env" ]; then docker exec -it "$TESTID" grep "$VPN_IPSEC_PSK" /etc/ipsec.secrets; fi
+  - if [ "$TESTID" = "with-env" ]; then docker exec -it "$TESTID" grep "$VPN_USER" /etc/ppp/chap-secrets; fi
+  - if [ "$TESTID" = "with-env" ]; then docker exec -it "$TESTID" grep "$VPN_PASSWORD" /etc/ppp/chap-secrets; fi
+  - if [ "$TESTID" = "with-env" ]; then docker exec -it "$TESTID" grep "$VPN_USER" /etc/ipsec.d/passwd; fi
+
+notifications:
+  email:
+    - linsongui@gmail.com
