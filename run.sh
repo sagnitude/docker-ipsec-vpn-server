@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 #
 # Docker script to configure and start an IPsec VPN server
 #
@@ -185,16 +185,17 @@ EOF
 if [ -z "$VPN_USERS" ] && [ -z "$VPN_PASSWORDS" ]; then
   echo "multiple users not set";
 else
-  USERS=$(echo $VPN_USERS | tr ";" "\n")
-  PASSS=$(echo $VPN_USERS | tr ";" "\n")
+  IFS=';' read -r -a USERS <<< "$VPN_USERS";
+  IFS=';' read -r -a PASSS <<< "$VPN_PASSWORDS";
   USERLEN=${#USERS[@]}
   PASSLEN=${#PASSS[@]}
   FINALLEN=$(($USERLEN>$PASSLEN?$PASSLEN:$USERLEN))
-  for ((it=0;it<$FINALLEN;i++));
+  for (( i=0; i<${FINALLEN}; i++ ));
   do
-    USERNAME=${USERS[it]}
-    PASSWORD=${PASSS[it]}
-    echo "$USERNAME" l2tpd "$PASSWORD" * >> /etc/ppp/chap-secrets
+    USERNAME=${USERS[$i]}
+    PASSWORD=${PASSS[$i]}
+    echo "adding user $USERNAME for password $PASSWORD"
+    echo \"$USERNAME\" l2tpd \"$PASSWORD\" "*" >> /etc/ppp/chap-secrets
     PASSENC=$(openssl passwd -1 "$PASSWORD")
     echo $USERNAME:$PASSENC:xauth-psk >> /etc/ipsec.d/passwd
   done
