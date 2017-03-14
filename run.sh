@@ -182,6 +182,24 @@ cat > /etc/ipsec.d/passwd <<EOF
 $VPN_USER:$VPN_PASSWORD_ENC:xauth-psk
 EOF
 
+if [ -z "$VPN_USERS" ] && [ -z "$VPN_PASSWORDS" ]; then
+  echo "multiple users not set";
+else
+  USERS=$(echo $VPN_USERS | tr ";" "\n")
+  PASSS=$(echo $VPN_USERS | tr ";" "\n")
+  USERLEN=${#USERS[@]}
+  PASSLEN=${#PASSS[@]}
+  FINALLEN=$(($USERLEN>$PASSLEN?$PASSLEN:$USERLEN))
+  for ((it=0;it<$FINALLEN;i++));
+  do
+    USERNAME=${USERS[it]}
+    PASSWORD=${PASSS[it]}
+    echo "$USERNAME" l2tpd "$PASSWORD" * >> /etc/ppp/chap-secrets
+    PASSENC=$(openssl passwd -1 "$PASSWORD")
+    echo $USERNAME:$PASSENC:xauth-psk >> /etc/ipsec.d/passwd
+  done
+fi
+
 # Update sysctl settings
 SYST='/sbin/sysctl -e -q -w'
 $SYST kernel.msgmnb=65536
